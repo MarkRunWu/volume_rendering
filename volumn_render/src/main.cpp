@@ -83,6 +83,17 @@ int savePrefernceColorTranslationFunc(){
 		return 0;
 	}
 }
+
+void saveOpacityTF(){
+	FILE *pOpacityTF = fopen("hurricane.tfe" , "wb");
+	//tf resolution
+	float resolution = 256;
+	fwrite( &resolution , sizeof(float) , 1 ,  pOpacityTF );
+	for( int i = 0 ; i != 256 ; i++ ){
+		fwrite( &rgba[i][3] , sizeof(float) , 1 , pOpacityTF );
+	}
+	fclose( pOpacityTF );
+}
 int loadPrefernceColorTranslationFunc(){
 	FILE *fin = fopen( "default.tfe", "rb");
 	if( fin != NULL ){

@@ -17,6 +17,7 @@ extern LittleTriangle* pActiveTriangle;
 extern PLYObject *ply;
 extern int loadPrefernceColorTranslationFunc();
 extern int savePrefernceColorTranslationFunc();
+extern void saveOpacityTF();
 extern void initData2(char const* filename);
 extern void guass_diffusion();
 static int motionMode;
@@ -137,8 +138,8 @@ void readKeyboard(unsigned char key, int x, int y)
   case 's':
   case 'S':
     // fill_me...
-	  savePrefernceColorTranslationFunc();
-	 
+	 savePrefernceColorTranslationFunc();
+	 //saveOpacityTF();
     break;
   case 'd':
     // fill_me...
