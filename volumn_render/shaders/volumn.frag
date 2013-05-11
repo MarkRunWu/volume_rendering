@@ -5,9 +5,27 @@ uniform sampler3D data;
 uniform sampler1D transerfunction;
 uniform vec3 viewVec;
 uniform vec3 NofViewPlan;
+uniform vec3 scale;
+
+//reference http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
+bool intersectBox( vec3 eye_pos , vec3 eye_dir , vec3 boxmin , vec3 boxmax ){
+	vec3 invR = 1.0 / eye_dir;
+    vec3 tbot = invR * (boxmin - eye_pos);
+    vec3 ttop = invR * (boxmax - eye_pos);
+
+    // re-order intersections to find smallest and largest on each axis
+    float3 tmin = min(ttop, tbot);
+    float3 tmax = max(ttop, tbot);
+
+    // find the largest tmin and the smallest tmax
+    float largest_tmin = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));
+    float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));
+
+    return smallest_tmax > largest_tmin;
+}
 
 vec3 getNormal( vec3 texPosition ){
-	vec3 pos = 0.5*texPosition + 0.5*vec3(1);
+	vec3 pos = (0.5*texPosition+0.5*scale)/scale; //0.5*texPosition + 0.5*vec3(1);
 	vec3 up = vec3( 0 , 0.005 , 0);
 	vec3 down = vec3( 0 , -0.005 , 0);
 	vec3 left = vec3( -0.005 , 0 , 0);
@@ -22,7 +40,7 @@ vec3 getNormal( vec3 texPosition ){
 	return scalar.xyz;
 }
 vec4 getColor( vec3 texPosition ){
-	vec3 pos = 0.5*texPosition + 0.5*vec3(1);
+	vec3 pos = (0.5*texPosition+0.5*scale)/scale; //0.5*texPosition + 0.5*vec3(1);
 	vec4 scalar = texture3D( data , pos.xyz );
 	vec4 tempColor = texture1D( transerfunction , scalar.s );
 	tempColor.rgb = tempColor.rgb * tempColor.a;
@@ -34,11 +52,11 @@ void main(){
 	vec3 samplePos = vec3(0.0);
 	vec3 rayStart = textureCoords;
 	vec3 tex = textureCoords;
-	vec3 view = viewVec ; 
+	vec3 view = viewVec; 
 	
-	vec3 scaleDim = vec3(1.0 , 1.0 , 0.9375); 
+	//vec3 scaleDim = vec3(1.0 , 1.0 , 0.9375); 
 
-	tex *= scaleDim;
+	//tex *= scaleDim;
 	view = tex - view;
 
 	/**
@@ -59,7 +77,9 @@ void main(){
 	*/
 
 	//view /= scaleDim;
-	
+	vec3 boxMin = vec3(  -scale.x ,  -scale.y ,  -scale.z );
+	vec3 boxMax = vec3( scale.x , scale.y , scale.z );
+	if( intersectBox( viewVec , normalize( view ) , boxMin , boxMax ) ){
 	
 	float sampleLen = sampleSpacing ;
 	vec4 sampleColor = vec4(0.0);
@@ -88,6 +108,7 @@ void main(){
 		|| samplePos.z > 1.0 || samplePos.z < -1.0 || accumulatedColor.a > 1.0){
 			break;
 		}
+	}
 	}
 	gl_FragColor = accumulatedColor;
 }

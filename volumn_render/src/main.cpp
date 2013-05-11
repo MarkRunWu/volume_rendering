@@ -18,7 +18,7 @@ unsigned char image[512][512][3];
 void guass_diffusion();
 
 int window , window2;
-GLint transferfunctionLoc , dataloc , viewloc , normal_of_viewplane , lightpos_loc;
+GLint transferfunctionLoc , dataloc , viewloc , normal_of_viewplane , lightpos_loc , scale_loc;
 int updateFlag;
 
 PLYObject *ply = NULL;
@@ -447,6 +447,8 @@ void display(void)
 	glUniform3f( viewloc , view[0] , view[1] , view[2] );
 	glUniform3f( normal_of_viewplane , axis_z[0] , axis_z[1] , axis_z[2] );
 	glUniform3f( lightpos_loc , 1 , -1 , 0 );
+	float max_scale = max( max( data_width , data_height ) , data_depth );
+	glUniform3f( scale_loc , data_width/max_scale , data_height/max_scale , data_depth/max_scale );
 	/* viewplane
 	glPushMatrix();
 	glTranslatef( -0.5*axis_z[0] , -0.5*axis_z[1] , -0.5*axis_z[2] );
@@ -778,6 +780,7 @@ void setShaders()
 	viewloc = glGetUniformLocation(p0 , "viewVec");
 	normal_of_viewplane = glGetUniformLocation(p0 , "NofViewPlan");
 	lightpos_loc = glGetUniformLocation(p0 , "lightDir");
+	scale_loc = glGetUniformLocation( p0 , "scale" );
 	
 }
 
