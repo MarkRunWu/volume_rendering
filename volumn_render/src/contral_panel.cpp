@@ -51,7 +51,7 @@ void fillColor(LittleTriangle* t1 , LittleTriangle* t2 ){
 		rgba[i][1] = (1.0 - frac) * rgb1.G + (frac) * rgb2.G;
 		rgba[i][2] = (1.0 - frac) * rgb1.B + (frac) * rgb2.B;
 		
-		rgba[i][3] = path[i] / 256.0;
+		rgba[i][3] = path[i] / 255.0;
 	}
 }
 
@@ -115,8 +115,8 @@ void updateTransferFuctionPartView(int x_post , int y_post , int x_last , int y_
 		y_post = tmp;
 	}
 	//printf("post: %d\t%d current: %d\t%d\n", x_post  , y_post  , x_last , y_last );
-	for( int i = x_post ; i < x_last; i++ ){
-		path[i] = (int) ( (i - x_post )*(y_last - y_post ) / (x_last - x_post)  + y_post );
+	for( int i = x_post ; i <= x_last; i++ ){
+		path[i] = (int) ( (i - x_post )*(y_last - y_post ) / max( (x_last - x_post) , 1 )  + y_post );
 		//printf( "%d\t" , path[i]);
 	}
 	list<LittleTriangle*>::iterator it , it2;

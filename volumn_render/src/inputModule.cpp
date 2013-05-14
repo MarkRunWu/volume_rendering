@@ -12,7 +12,8 @@
 #include <afxsock.h>
 #include <direct.h>
 #endif
-
+extern void updateRGBA();
+extern float rgba[256][4];
 extern LittleTriangle* pActiveTriangle;
 extern PLYObject *ply;
 extern int loadPrefernceColorTranslationFunc();
@@ -69,9 +70,32 @@ int OpenFileByWinAPI( wchar_t* filebuffer , int filebufferlength){
 	return 0;
 }
 
+int feature = 0;
 void readKeyboard(unsigned char key, int x, int y)
 {
   switch(key){
+  case '+':
+	  printf( "+" );
+	  feature = min(feature + 1 , 255 );
+
+	  for( int i = 0 ; i != 256 ; i++ ){
+		  if( i == feature )
+			  rgba[i][3] = 255;
+		  else rgba[i][3] = 0;
+	  }
+	  updateRGBA();
+	  break;
+  case '-':
+	  printf( "-" );
+	  feature = max(feature - 1 , 0 );
+	  
+  	  for( int i = 0 ; i != 256 ; i++ ){
+		  if( i == feature )
+			  rgba[i][3] = 255;
+		  else rgba[i][3] = 0;
+	  }
+	  updateRGBA();
+	  break;
   case  0x1B:
   case  'q':
   case  'Q':
