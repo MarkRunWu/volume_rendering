@@ -8,7 +8,7 @@ uniform vec3 NofViewPlan;
 uniform vec3 scale;
 
 //reference http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
-bool intersectBox( vec3 eye_pos , vec3 eye_dir , vec3 boxmin , vec3 boxmax ){
+bool intersectBox( vec3 eye_pos , vec3 eye_dir , vec3 boxmin , vec3 boxmax , out float tnear , out float tfar ){
 	vec3 invR = 1.0 / eye_dir;
     vec3 tbot = invR * (boxmin - eye_pos);
     vec3 ttop = invR * (boxmax - eye_pos);
@@ -20,7 +20,8 @@ bool intersectBox( vec3 eye_pos , vec3 eye_dir , vec3 boxmin , vec3 boxmax ){
     // find the largest tmin and the smallest tmax
     float largest_tmin = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));
     float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));
-
+	tnear = largest_tmin;
+	tfar = smallest_tmax;
     return smallest_tmax > largest_tmin;
 }
 
@@ -52,35 +53,20 @@ void main(){
 	vec3 samplePos = vec3(0.0);
 	vec3 rayStart = textureCoords;
 	vec3 tex = textureCoords;
-	vec3 view = viewVec; 
-	
-	//vec3 scaleDim = vec3(1.0 , 1.0 , 0.9375); 
-
-	//tex *= scaleDim;
-	view = tex - view;
-
 	/**
 	*  drawing on the back-plane
 	*/
-	vec3 n = normalize(normal);
-	vec3 viewV = normalize(viewVec - textureCoords); // pos to eye
-	if( dot( viewV , n ) < 0.0 ){ // view pos is within cube	  
-	  vec3 np = normalize( NofViewPlan );
-	  float t = dot( tex - viewVec  , np ) / dot(np , np);
-	  if( t < 0.0) // exist a point in the viewplan 
-		rayStart = tex - t*np - sampleSpacing;
-	  
-	}
+	vec3 viewV = normalize(textureCoords - viewVec); // pos to eye
 	
 	/**
 	*  drawing on the intersection plan
 	*/
-
+	float tnear,tfar;
 	//view /= scaleDim;
 	vec3 boxMin = vec3(  -scale.x ,  -scale.y ,  -scale.z );
 	vec3 boxMax = vec3( scale.x , scale.y , scale.z );
-	if( intersectBox( viewVec , normalize( view ) , boxMin , boxMax ) ){
-	
+	if( intersectBox( viewVec , viewV , boxMin , boxMax , tnear , tfar ) ){
+	if( tnear < 0.0 ) tnear = 0.0;
 	float sampleLen = sampleSpacing ;
 	vec4 sampleColor = vec4(0.0);
 	vec4 diffuse = vec4( 1.0 , 0.0 ,0.0 , 0.0);
@@ -89,24 +75,26 @@ void main(){
 	lightDir = vec3(0,-1,0);
 	vec3 ldir = normalize(lightDir);
 	vec3 h = normalize(-viewV );
+	rayStart = viewVec + tnear*viewV;
 	while(true){
-		samplePos = rayStart + sampleLen * view;
+		samplePos = rayStart + sampleLen * viewV;
 		sampleLen += sampleSpacing;
 		// caculate normal
 		normalv = getNormal( samplePos );
 		float f = dot( h , normalv );
-		float sp = dot( h , normalv );
+		//float sp = dot( h , normalv );
 		sampleColor = getColor(samplePos);
 		if( f > 0.0 ) sampleColor.rgb *= f*diffuse.rgb;
-		if( sp > 0.0 ) sampleColor += pow( sp , 10.0 )*specular;
+		//if( sp > 0.0 ) sampleColor += pow( sp , 10.0 )*specular;
 		
 		if( sampleColor.a > 0.001 ){
 			accumulatedColor.rgb = (1.0 - accumulatedColor.a)*sampleColor.rgb + accumulatedColor.rgb;
 			accumulatedColor.a = (1.0 - accumulatedColor.a)*sampleColor.a + accumulatedColor.a;
 		}
 		if( samplePos.x > 1.0 || samplePos.y > 1.0 || samplePos.x < -1.0 || samplePos.y < -1.0
-		|| samplePos.z > 1.0 || samplePos.z < -1.0 || accumulatedColor.a > 1.0){
-			break;
+			|| samplePos.z > 1.0 || samplePos.z < -1.0 || accumulatedColor.a > 1.0){
+				break;
+			
 		}
 	}
 	}

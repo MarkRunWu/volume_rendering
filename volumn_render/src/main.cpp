@@ -2,6 +2,8 @@
 ** Student ID number: // fill_me
 */
 
+#include <iostream>
+using namespace std;
 #include "Resource.h"
 #include "textfile.h"
 #define DEGREE2RADIAN( x )( ((x) / 180.0) * 3.14159265)
@@ -86,6 +88,7 @@ int savePrefernceColorTranslationFunc(){
 
 void saveOpacityTF(){
 	FILE *pOpacityTF = fopen("hurricane.tfe" , "wb");
+	if( pOpacityTF != NULL ){
 	//tf resolution
 	float resolution = 256;
 	fwrite( &resolution , sizeof(float) , 1 ,  pOpacityTF );
@@ -93,6 +96,7 @@ void saveOpacityTF(){
 		fwrite( &rgba[i][3] , sizeof(float) , 1 , pOpacityTF );
 	}
 	fclose( pOpacityTF );
+	}
 }
 int loadPrefernceColorTranslationFunc(){
 	FILE *fin = fopen( "default.tfe", "rb");
@@ -447,6 +451,7 @@ void display(void)
 	glUniform3f( viewloc , view[0] , view[1] , view[2] );
 	glUniform3f( normal_of_viewplane , axis_z[0] , axis_z[1] , axis_z[2] );
 	glUniform3f( lightpos_loc , 1 , -1 , 0 );
+	//std::cout << data_width << "," << data_height << "," << data_depth << std::endl;
 	float max_scale = max( max( data_width , data_height ) , data_depth );
 	glUniform3f( scale_loc , data_width/max_scale , data_height/max_scale , data_depth/max_scale );
 	/* viewplane

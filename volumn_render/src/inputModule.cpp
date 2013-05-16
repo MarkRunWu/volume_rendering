@@ -162,8 +162,8 @@ void readKeyboard(unsigned char key, int x, int y)
   case 's':
   case 'S':
     // fill_me...
-	 savePrefernceColorTranslationFunc();
-	 //saveOpacityTF();
+	 //savePrefernceColorTranslationFunc();
+	 saveOpacityTF();
     break;
   case 'd':
     // fill_me...
