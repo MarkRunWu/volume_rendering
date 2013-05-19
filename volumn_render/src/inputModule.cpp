@@ -21,6 +21,9 @@ extern int savePrefernceColorTranslationFunc();
 extern void saveOpacityTF();
 extern void initData2(char const* filename);
 extern void guass_diffusion();
+extern void dumpHistorgram();
+extern void loadIntoTexture(int timestep );
+extern int current_time_step;
 static int motionMode;
 static int startX;
 static int startY;
@@ -74,6 +77,14 @@ int feature = 0;
 void readKeyboard(unsigned char key, int x, int y)
 {
   switch(key){
+  case 'n':
+	  printf("time step %d\n" , current_time_step );
+	  loadIntoTexture(++current_time_step);
+	  break;
+  case 'b':
+	  loadIntoTexture(--current_time_step);
+	  current_time_step = max( current_time_step , 1 );
+	  break;
   case '+':
 	  printf( "+" );
 	  feature = min(feature + 1 , 255 );
@@ -167,6 +178,7 @@ void readKeyboard(unsigned char key, int x, int y)
     break;
   case 'd':
     // fill_me...
+	dumpHistorgram();
 	break;
   case 'D':
     // fill_me...
@@ -188,7 +200,7 @@ void readKeyboard(unsigned char key, int x, int y)
   case 'l':case'L':
 	light ^= 1;
 	break;
- case 'b':case'B':
+ case'B':
 	 isPressedB ^= 1;
 	 break;
   case 'p':case'P':

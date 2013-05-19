@@ -15,6 +15,19 @@ extern int record;
 extern int panel_height;
 extern int panel_width;
 extern int isPressedB;
+
+typedef struct{
+	int MaxTimeStep;
+	int MinTimeStep;
+	int centerTimeStep;
+	int halfBufferWindow;
+	int dimSize;
+	int cache;
+	unsigned char* data; //base buffer
+	char path[128]; // D:cloud_data/CLOUDf
+} VolumeInfo;
+VolumeInfo volumeInfo;
+
 unsigned char image[512][512][3];
 
 void guass_diffusion();
@@ -35,7 +48,7 @@ int path[256] = {0};
 int data_width = 256;
 int data_height = 256;
 int data_depth = 240;
-
+int current_time_step;
 GLuint texName3D;
 
 int slice_mode = 1;
@@ -66,6 +79,12 @@ void updateRGBA(){
 	updateTexture(window2);
 }
 
+void dumpHistorgram(){
+	for( int i = 0 ; i != 256 ; i++){
+		printf( "%d_[%d][%.2f]\n" , i , histogram[i] , rgba[i][3]);
+	}
+}
+
 
 
 int savePrefernceColorTranslationFunc(){
@@ -93,6 +112,7 @@ void saveOpacityTF(){
 	float resolution = 256;
 	fwrite( &resolution , sizeof(float) , 1 ,  pOpacityTF );
 	for( int i = 0 ; i != 256 ; i++ ){
+		printf("%.3f\n" , rgba[i][3] );
 		fwrite( &rgba[i][3] , sizeof(float) , 1 , pOpacityTF );
 	}
 	fclose( pOpacityTF );
@@ -622,23 +642,125 @@ void idle_callback(void){
 	glutSetWindow( window2 );
 	glutPostRedisplay();
 }
+
+
+void* getVolumeDataAtTime(int timestep ){
+	current_time_step = timestep;
+	//hit
+	if(volumeInfo.cache && timestep <= volumeInfo.centerTimeStep + volumeInfo.halfBufferWindow && timestep >= volumeInfo.centerTimeStep - volumeInfo.halfBufferWindow ){
+		return volumeInfo.data + (timestep - volumeInfo.centerTimeStep + volumeInfo.halfBufferWindow)*volumeInfo.dimSize;
+	}
+	//realloca memory
+	//over max timestep in memory, move data buffer to left
+	
+	unsigned char* pBuffer;
+	int count = 2*volumeInfo.halfBufferWindow + 1;
+	int start_timestep = timestep;
+	/*
+	int offset = abs( timestep - volumeInfo.centerTimeStep ) - 1;
+	if(  timestep - volumeInfo.centerTimeStep - 1  <  2*volumeInfo.halfBufferWindow ){
+		int leftTimeStep = timestep - volumeInfo.centerTimeStep;
+		int move_size = volumeInfo.centerTimeStep - ;
+		count -= move_size;
+		memcpy( volumeInfo.data , volumeInfo.data + offset*volumeInfo.dimSize , volumeInfo.dimSize );
+		pBuffer += move_size*volumeInfo.dimSize;
+	}else if( volumeInfo.centerTimeStep - timestep - 1  <  2*volumeInfo.halfBufferWindow ){ //blow  min timestep in memory, move data buffer to right
+		int move_size = timestep + volumeInfo.halfBufferWindow - volumeInfo.centerTimeStep;
+		count -= move_size;
+		int length = timestep - volumeInfo.currentTimeStep;
+		int right = volumeInfo.halfBufferWindow - length;
+		memcpy( volumeInfo.data + right , volumeInfo.data - offset*volumeInfo.dimSize , length*volumeInfo.dimSize );
+	}*/
+	//start load file from disk
+	
+	if( !volumeInfo.cache ){ 
+		volumeInfo.cache = true;
+		volumeInfo.data = (unsigned char*)malloc( sizeof(unsigned char) * volumeInfo.dimSize * (volumeInfo.MaxTimeStep - volumeInfo.MinTimeStep + 1) );
+	}
+	pBuffer = volumeInfo.data;
+	volumeInfo.centerTimeStep = timestep + volumeInfo.halfBufferWindow - start_timestep;
+	printf("%d\n" , volumeInfo.centerTimeStep );
+	//load data from disk
+	char file_name[256];
+	int id = 0;
+	while( id++ < count - 1 ){
+		strcpy( file_name , volumeInfo.path );
+		printf("%s\n" , volumeInfo.path );
+		sprintf( file_name , "%s%02d.dat" , volumeInfo.path , start_timestep + id );
+		FILE* pin = fopen( file_name  , "rb" );
+		if( pin != NULL ){
+			fread( pBuffer , sizeof( unsigned char) , volumeInfo.dimSize , pin );
+			pBuffer = pBuffer + volumeInfo.dimSize;
+		}else{
+			printf("%s file not found...\n" , file_name );
+			system("pause");
+			exit(1);
+		}
+	}
+	return volumeInfo.data;
+
+}
+
+void loadIntoTexture(int timestep ){
+	unsigned char* data = (unsigned char*)getVolumeDataAtTime(timestep);
+	if( data != NULL ){
+		for( int k = 0 ; k != 256 ; k++){
+			histogram[ k ] = 0;
+		}
+		//histogram
+
+		for( int k = 0 ; k < data_depth ; k++){
+			for( int i = 0 ; i < data_width ; i++){
+				for( int j = 0 ; j < data_height ; j++){
+					histogram[ (int)data[k*data_width*data_height + i*data_height + j] ]++;
+				}
+			}
+		}
+		//reset histogram
+
+		glActiveTexture( GL_TEXTURE1 );
+		fprintf(stderr, "texture id: %u.\n" , texName3D);
+		glBindTexture(GL_TEXTURE_3D , texName3D );
+		//set Texture mapping parameters
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_T , GL_CLAMP);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_S , GL_CLAMP);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_R , GL_CLAMP);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MAG_FILTER , GL_NEAREST);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MIN_FILTER , GL_NEAREST);
+
+		//generate a 3D texture
+		glTexImage3D(GL_TEXTURE_3D , 0 , GL_LUMINANCE , data_width , data_height , data_depth , 0 , GL_LUMINANCE , GL_UNSIGNED_BYTE ,  data );
+		glDisable(GL_TEXTURE_3D);
+
+		glutSetWindow(window2);
+		glutPostRedisplay();
+		glutSetWindow(window);
+		glutPostRedisplay();
+	}
+}
+
+
 void initData2( const char* volumn_file){
+	
 	char filename[100];
 	
 	strcpy(  filename , volumn_file);
 	printf("open %s\n" , filename);
 	char* extension = strstr( filename , ".hdr");
 	FILE* fheader = fopen(filename , "r");
-	unsigned char* data;
 	fscanf( fheader ,  "%d%d%d" , &data_width , &data_height , &data_depth );
 	fclose( fheader );
 
-	//allocate w * h * d memory
-	data = (unsigned char*) malloc(sizeof(unsigned char)*data_depth * data_width * data_height );
-	//teapot.Data = new unsigned char[width*height*depth];
-	
-	strncpy( extension , ".dat", 4 );
-	
+	*(extension - 2) = '\0';
+	volumeInfo.cache = false;
+	volumeInfo.dimSize = data_width * data_height * data_depth;
+	volumeInfo.halfBufferWindow = 2;
+	volumeInfo.MinTimeStep = 1;
+	volumeInfo.MaxTimeStep = 5;
+	strcpy( volumeInfo.path  , filename);
+
+	loadIntoTexture( volumeInfo.MinTimeStep );
+	/*
 	//read data from disk
 	FILE* fin = fopen(filename , "rb");
 	if( !fin){
@@ -646,52 +768,25 @@ void initData2( const char* volumn_file){
 		exit(1);
 	}
 	fread( data , sizeof(unsigned char) , data_depth*data_width*data_height , fin );
+	/*
+	for(int i = 0 ; i!= data_width*data_height*data_depth ; i++)
+		data[i] = min( 255 , (int)( data[i]*data[i]*0.25) );
+		
 	fclose(fin);
-
-	//reset histogram
-	for( int k = 0 ; k != 256 ; k++){
-		histogram[ k ] = 0;
-	}
-	//histogram
-	
-	for( int k = 0 ; k < data_depth ; k++){
-		for( int i = 0 ; i < data_width ; i++){
-			for( int j = 0 ; j < data_height ; j++){
-
-				histogram[ (int)data[k*data_width*data_height + i*data_height + j] ]++;
-			}
-		}
-	}
-	
-	
-	glActiveTexture( GL_TEXTURE1 );
-	fprintf(stderr, "texture id: %u.\n" , texName3D);
-	glBindTexture(GL_TEXTURE_3D , texName3D );
-	//set Texture mapping parameters
-	glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_T , GL_CLAMP);
-	glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_S , GL_CLAMP);
-	glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_R , GL_CLAMP);
-	glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MAG_FILTER , GL_LINEAR);
-	glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MIN_FILTER , GL_LINEAR);
-
-	//generate a 3D texture
-	glTexImage3D(GL_TEXTURE_3D , 0 , GL_LUMINANCE , data_width , data_height , data_depth , 0 , GL_LUMINANCE , GL_UNSIGNED_BYTE , data );
+	*/
 
 	//write into mData;
-
+	/*
 	for( int k = 0 ; k < data_depth ; k++){
 		for( int i = 0 ; i < data_width ; i++){
 			for( int j = 0 ; j < data_height ; j++){
 				mdata[k][i][j] = data[k*data_width*data_height + i*data_height + j] ;
 			}
 		}
-	}
+	}*/
 	//guass_diffusion();
-	
-	glDisable(GL_TEXTURE_3D);
-
-	
 }
+
 
 void init_ply(void)
 {
@@ -891,7 +986,8 @@ int main(int argc, char **argv)
 	}
 	//generate a texture id
 	glGenTextures(1 , &texName3D);
-	initData2("CT_head.hdr");
+	
+	//initData2("CT_head.hdr");
 	initDisplay();
 	setShaders();
 	///////////////////////////////////

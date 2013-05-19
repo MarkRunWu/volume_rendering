@@ -74,7 +74,8 @@ void drawHistogram(){
 		if( pressedG ){
 			outputs[i] = log10( (double) histogram[i]);
 		}else{
-			outputs[i] = histogram[i] / 1000.0;
+			//outputs[i] = histogram[i] / 1000.0;
+			outputs[i] = histogram[i];
 		}
 	}
 	glColor3f(0.f , 0.f , 1.f );

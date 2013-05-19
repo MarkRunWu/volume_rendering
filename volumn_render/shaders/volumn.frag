@@ -69,12 +69,12 @@ void main(){
 	if( tnear < 0.0 ) tnear = 0.0;
 	float sampleLen = sampleSpacing ;
 	vec4 sampleColor = vec4(0.0);
-	vec4 diffuse = vec4( 1.0 , 0.0 ,0.0 , 0.0);
+	vec4 diffuse = vec4( 1.0 , 1.0 ,1.0 , 0.0);
 	vec4 specular = vec4( 1.0 , 1.0 , 1.0  , 0.0 );
 	vec3 normalv;
 	lightDir = vec3(0,-1,0);
 	vec3 ldir = normalize(lightDir);
-	vec3 h = normalize(-viewV );
+	vec3 h = normalize(viewV );
 	rayStart = viewVec + tnear*viewV;
 	while(true){
 		samplePos = rayStart + sampleLen * viewV;
