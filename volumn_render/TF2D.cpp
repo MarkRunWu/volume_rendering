@@ -8,6 +8,7 @@
 #define TF_2D_START_Y 100
 #define TF_2D_SIZE 256
 int histogram_2D[TF_2D_SIZE][TF_2D_SIZE] = {0};
+float histogram[][][4];
 extern void updateWindows();
 float his2D_max = 0;
 void draw2DTransferFunction()

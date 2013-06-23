@@ -51,13 +51,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\glew-1.9.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\glew-1.9.0\include;C:\glew-1.9.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\glew-1.9.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\glew-1.9.0\lib;C:\glew-1.9.0\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>FreeImage.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -80,13 +80,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ColorTile.cpp" />
-    <ClCompile Include="src\contral_panel.cpp" />
+    <ClCompile Include="src\control_panel.cpp" />
     <ClCompile Include="src\geometry.cpp" />
     <ClCompile Include="src\hsv\hsv.cpp" />
     <ClCompile Include="src\inputModule.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ply.cpp" />
     <ClCompile Include="src\textfile.cpp" />
+    <ClCompile Include="TF2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ColorTile.h" />

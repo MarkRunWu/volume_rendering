@@ -33,13 +33,16 @@
     <ClCompile Include="src\hsv\hsv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\contral_panel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ColorTile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\textfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TF2D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\control_panel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

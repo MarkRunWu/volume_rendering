@@ -17,6 +17,7 @@ extern int record;
 extern int panel_height;
 extern int panel_width;
 extern int isPressedB;
+bool b_show_box = false;
 //unsigned char image[512][512][3];
 //2d tf
 extern void compute_gradient(float* temp , int WIDTH, int HEIGHT, int DEPTH);
@@ -33,7 +34,7 @@ char* image_name;
 void guass_diffusion();
 void initData2( const char* volumn_file);
 int window , window2;
-GLint transferfunctionLoc , dataloc , viewloc , normal_of_viewplane , lightpos_loc , scale_loc;
+GLint transferfunctionLoc , dataloc , viewloc , normal_of_viewplane , lightpos_loc , scale_loc , tfData_loc , tfColor_loc;
 int updateFlag;
 
 PLYObject *ply = NULL;
@@ -51,6 +52,7 @@ int data_height = 256;
 int data_depth = 240;
 
 GLuint texName3D;
+GLuint texTF_3D;
 
 int slice_mode = 1;
 float index = 0 ;
@@ -388,14 +390,14 @@ void display(void)
 	if (!record){
 		gl_ortho_begin(IMAGE_WIDTH, IMAGE_HEIGHT);
 		//string_render("Computer Graphics (Spring 2012), Name: Mark Run Wu, ID: 100598020", 20, IMAGE_HEIGHT-20); // fill_me...
-		string_render("v: start/end screenshot", 20, IMAGE_HEIGHT-40);
-		string_render("p: Open volume data", 20, IMAGE_HEIGHT-60);
+		string_render("h: for help", 20, IMAGE_HEIGHT-40);
+		//string_render("p: Open volume data", 20, IMAGE_HEIGHT-60);
 		gl_ortho_end();
 	}
 
 
-
-	drawVolumnBox();
+	if( b_show_box )
+		drawVolumnBox();
 
 	
 
@@ -456,6 +458,8 @@ void display(void)
 	// uniform
 	glUniform1i( transferfunctionLoc , 0);
 	glUniform1i(dataloc,1);
+	glUniform1i(tfData_loc , 2 );
+	glUniform1i(tfColor_loc , 3 );
 	glUniform3f( viewloc , view[0] , view[1] , view[2] );
 	glUniform3f( normal_of_viewplane , axis_z[0] , axis_z[1] , axis_z[2] );
 	glUniform3f( lightpos_loc , 1 , -1 , 0 );
@@ -601,8 +605,13 @@ void initDisplay()
 
 
 	//-------------------------------------------------------
-	//generate a texture id
+	//generate textures
 	glGenTextures(1 , &texName3D);
+	glGenTextures(1 , &texTF_3D);
+	glGenTextures(1 , &texName_1D);
+	
+	fprintf(stderr, "texture1D id: %u.\n" , texName_1D);
+	glBindTexture( GL_TEXTURE_1D , texName_1D );
 }
 
 void updateWindows(){
@@ -707,6 +716,23 @@ void initData2( const char* volumn_file){
 			}
 		}
 		compute_gradient(tmp  , data_width , data_height , data_depth );
+
+		glActiveTexture( GL_TEXTURE2 );
+		fprintf(stderr, "texture id: %u.\n" , texTF_3D);
+		glBindTexture(GL_TEXTURE_3D , texTF_3D );
+		//set Texture mapping parameters
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_T , GL_CLAMP);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_S , GL_CLAMP);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_WRAP_R , GL_CLAMP);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MAG_FILTER , GL_LINEAR);
+		glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MIN_FILTER , GL_LINEAR);
+
+		//generate a 3D texture
+		glTexImage3D(GL_TEXTURE_3D , 0 , GL_RG , data_width , data_height , data_depth , 0 , GL_LUMINANCE_ALPHA , GL_FLOAT , tmp );
+
+		glDisable(GL_TEXTURE_3D);
+
+
 		delete [] tmp;
 		data = udata;
 	}else{
@@ -828,6 +854,9 @@ void setShaders()
 	normal_of_viewplane = glGetUniformLocation(p0 , "NofViewPlan");
 	lightpos_loc = glGetUniformLocation(p0 , "lightDir");
 	scale_loc = glGetUniformLocation( p0 , "scale" );
+
+	tfData_loc = glGetUniformLocation( p0 , "TF2D_data" );
+	tfColor_loc = glGetUniformLocation(p0 , "TF_color" );
 	
 }
 
@@ -892,7 +921,7 @@ int main(int argc, char **argv)
 {
 	b_batMode = false;
 	if( argc < 5 ){
-		cout << "volumn_render src_dat_path dat_name outputpath imagename" << endl;
+		//cout << "volumn_render src_dat_path dat_name outputpath imagename" << endl;
 	}else{
 		b_batMode = true;
 		src_path = argv[1];
@@ -950,9 +979,7 @@ int main(int argc, char **argv)
 	setShaders();
 	///////////////////////////////////
 	//glutSetWindow( window2 );
-	glGenTextures(1 , &texName_1D);
-	fprintf(stderr, "texture1D id: %u.\n" , texName_1D);
-	glBindTexture( GL_TEXTURE_1D , texName_1D );
+	
 	updateRGBA();
 	
 	glutMainLoop();

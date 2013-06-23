@@ -12,6 +12,7 @@
 #include <afxsock.h>
 #include <direct.h>
 #endif
+extern bool b_show_box;
 extern bool b_log10;
 /* bat ¼Ò¦¡ */
 extern bool b_batMode;
@@ -127,20 +128,18 @@ void readKeyboard(unsigned char key, int x, int y)
  // case 'W':
  //   wire = (wire + 1) % 2;
  //   break;
- // case 'h':
- // case 'H':
- //   printf("\tpress q/Q for quit\n");
- //   printf("\tpress i/I to invert normals\n");
- //   printf("\tpress b/B to display bounding box\n");
- //   printf("\tpress w/W to toggle wire frame rendering\n");
- //   printf("\tpress e/E to revert viewpoint to initial positions\n");
-	//printf("\tpress z/Z to scale PLY object\n"); // scale
-	//printf("\tpress x/X to scale PLY object\n");
-	//printf("\tpress c/C to scale PLY object\n");
-	//printf("\tpress a/A to rotate PLY object\n"); // rotate
-	//printf("\tpress s/S to rotate PLY object\n");
-	//printf("\tpress d/D to rotate PLY object\n");
- //   break;
+  case 'h':
+  case 'H':
+    //printf("\tpress q/Q for quit\n");
+    //printf("\tpress i/I to invert normals\n");
+    printf("\tpress b/B to display bounding box\n");
+    //printf("\tpress w/W to toggle wire frame rendering\n");
+    printf("\tpress l/L to enable log value\n");
+	printf("\tpress v/V to record\n"); // scale
+	printf("\tpress s/S to save TF color (default.tfe)\n");
+	printf("\tpress a/A to load TF color (default.tfe)\n");
+	printf("\tpress p/P to show an openfiledialog\n"); // rotate
+    break;
  // // scale ------------------------------------
  // case 'z':
  // case 'Z':
@@ -168,8 +167,8 @@ void readKeyboard(unsigned char key, int x, int y)
   case 's':
   case 'S':
     // fill_me...
-	 //savePrefernceColorTranslationFunc();
-	 saveOpacityTF();
+	 savePrefernceColorTranslationFunc();
+	 //saveOpacityTF();
     break;
  // case 'd':
  //   // fill_me...
@@ -194,7 +193,9 @@ void readKeyboard(unsigned char key, int x, int y)
  // case 'l':case'L':
 	//light ^= 1;
 	//break;
- //case 'b':case'B':
+ case 'b':case'B':
+	 b_show_box ^= 1;
+	 break;
 	// isPressedB ^= 1;
 	// break;
   case 'l':case'L':
