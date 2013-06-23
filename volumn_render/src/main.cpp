@@ -17,7 +17,9 @@ extern int record;
 extern int panel_height;
 extern int panel_width;
 extern int isPressedB;
-unsigned char image[512][512][3];
+//unsigned char image[512][512][3];
+//2d tf
+extern void compute_gradient(float* temp , int WIDTH, int HEIGHT, int DEPTH);
 
 // bat ¼Ò¦¡
 bool b_batMode = false;
@@ -41,6 +43,7 @@ perspectiveData pD;
 GLuint v0, f0, p0; // shader
 bool b_log10 = false;
 int histogram[256] = {0};
+
 int path[256] = {0};
 
 int data_width = 256;
@@ -618,6 +621,7 @@ void idle_callback(void){
 	}
 	updateWindows();
 }
+
 void initData2( const char* volumn_file){
 	char filename[100];
 	
@@ -653,7 +657,7 @@ void initData2( const char* volumn_file){
 		float* fdata = (float*) malloc(sizeof(float)*data_depth * data_width * data_height );
 		fread( fdata , sizeof(float) , data_depth*data_width*data_height , fin );
 		
-		float fmin = 1e30,fmax = -1e30;
+		float fmin = 1e+30,fmax = -1e-30;
 		for( int k = 0 ; k < data_depth ; k++){
 			for( int j = 0 ; j < data_height ; j++){
 				for( int i = 0 ; i < data_width ; i++){
@@ -676,7 +680,7 @@ void initData2( const char* volumn_file){
 		//allocate w * h * d memory
 		unsigned char* udata = (unsigned char*) malloc(sizeof(unsigned char)*data_depth * data_width * data_height );
 		fread( udata , sizeof(unsigned char) , data_depth*data_width*data_height , fin );
-
+		
 		for( int k = 0 ; k < data_depth ; k++){
 			for( int i = 0 ; i < data_width ; i++){
 				for( int j = 0 ; j < data_height ; j++){
@@ -684,7 +688,26 @@ void initData2( const char* volumn_file){
 				}
 			}
 		}
-
+		
+		unsigned char max_ubyte = 0;
+		for( int k = 0 ; k < data_depth ; k++){
+			for( int j = 0 ; j < data_height ; j++){
+				for( int i = 0 ; i < data_width ; i++){
+					max_ubyte = max( max_ubyte , udata[ k*data_width*data_height + j*data_width + i] );
+				}
+			}
+		}
+		float* tmp = (float*) malloc(sizeof(float)*data_depth * data_width * data_height*2 ); //¨â­¿space for values and gradeient values
+		for( int k = 0 ; k < data_depth ; k++){
+			for( int j = 0 ; j < data_height ; j++){
+				for( int i = 0 ; i < data_width ; i++){
+					tmp[ 2*( k*data_width*data_height + j*data_width + i)] = udata[ k*data_width*data_height + j*data_width + i]/(float)max_ubyte;
+					tmp[ 2*( k*data_width*data_height + j*data_width + i) + 1] = 0;
+				}
+			}
+		}
+		compute_gradient(tmp  , data_width , data_height , data_depth );
+		delete [] tmp;
 		data = udata;
 	}else{
 		cout << "Error: unkown format... " << endl;

@@ -24,6 +24,9 @@ extern void gl_ortho_begin(unsigned size_x, unsigned size_y);
 extern void gl_ortho_end(void);
 extern void string_render(const char *string, GLint x, GLint y);
 
+//2d tf
+extern void draw2DTransferFunction();
+
 HSVType panel_color;
 GLuint mouse_button;
 
@@ -307,6 +310,8 @@ void display_(){
 	drawArea();
 	drawHistogram();
 	drawLittleTriangle();
+
+	draw2DTransferFunction();
 	
 	if( pActiveTriangle != NULL ){
 		glColor3ub( 0 , 0 , 0);
