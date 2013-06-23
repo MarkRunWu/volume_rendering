@@ -189,7 +189,7 @@ void wheelDetection(float x1,float y1,float central_x,float central_y,float radi
 			double angle = atan2( (y1-central_y),(x1-central_x))*180/M_PI;
 			angle += 360;
 			angle = ((int)angle) % 360;
-			printf("angle = %f\n",angle);
+			//printf("angle = %f\n",angle);
 			clickH = (int)angle;
 	}
 }
@@ -212,7 +212,7 @@ void triangleDetection(float x1,float y1,float central_x,float central_y,float r
 	//slope  = sqrt(3);
 	if( x1>=a_x && x1<=b_x && y1>=a_y && y1<= triangle_y) 
 	{
-		printf("in triangle\n");
+		//printf("in triangle\n");
 		clickS = (((y1-a_y)/1.732050807568877)*2)/(b_x-a_x);
 		clickV = (b_x-(x1-((y1-a_y)/1.732050807568877)))/(b_x-a_x);
 
@@ -220,7 +220,7 @@ void triangleDetection(float x1,float y1,float central_x,float central_y,float r
         clickSV_y = y1;
 	}
 
-	printf("hsv = (%f,%f,%f)\n", clickH, clickS, clickV);
+	//printf("hsv = (%f,%f,%f)\n", clickH, clickS, clickV);
 }
 
 static void drawDot(int x, int y) 

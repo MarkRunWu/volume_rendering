@@ -12,6 +12,10 @@
 #include <afxsock.h>
 #include <direct.h>
 #endif
+extern bool b_log10;
+/* bat ¼Ò¦¡ */
+extern bool b_batMode;
+extern int id_file;
 extern void updateRGBA();
 extern float rgba[256][4];
 extern LittleTriangle* pActiveTriangle;
@@ -21,6 +25,7 @@ extern int savePrefernceColorTranslationFunc();
 extern void saveOpacityTF();
 extern void initData2(char const* filename);
 extern void guass_diffusion();
+extern void updateWindows();
 static int motionMode;
 static int startX;
 static int startY;
@@ -74,83 +79,84 @@ int feature = 0;
 void readKeyboard(unsigned char key, int x, int y)
 {
   switch(key){
-  case '+':
-	  printf( "+" );
-	  feature = min(feature + 1 , 255 );
+  //case '+':
+	 // printf( "+" );
+	 // feature = min(feature + 1 , 255 );
 
-	  for( int i = 0 ; i != 256 ; i++ ){
-		  if( i == feature )
-			  rgba[i][3] = 255;
-		  else rgba[i][3] = 0;
-	  }
-	  updateRGBA();
-	  break;
-  case '-':
-	  printf( "-" );
-	  feature = max(feature - 1 , 0 );
-	  
-  	  for( int i = 0 ; i != 256 ; i++ ){
-		  if( i == feature )
-			  rgba[i][3] = 255;
-		  else rgba[i][3] = 0;
-	  }
-	  updateRGBA();
-	  break;
-  case  0x1B:
-  case  'q':
-  case  'Q':
-    delete(ply);
-    exit(0);
-    break;
-  case 'i':
-  case 'I':
-    if (ply)
-      ply->invertNormals();
-    break;
+	 // for( int i = 0 ; i != 256 ; i++ ){
+		//  if( i == feature )
+		//	  rgba[i][3] = 255;
+		//  else rgba[i][3] = 0;
+	 // }
+	 // updateRGBA();
+	 // break;
+  //case '-':
+	 // printf( "-" );
+	 // feature = max(feature - 1 , 0 );
+	 // 
+  //	  for( int i = 0 ; i != 256 ; i++ ){
+		//  if( i == feature )
+		//	  rgba[i][3] = 255;
+		//  else rgba[i][3] = 0;
+	 // }
+	 // updateRGBA();
+	 // break;
+ // case  0x1B:
+ // case  'q':
+ // case  'Q':
+ //   delete(ply);
+ //   exit(0);
+ //   break;
+ // case 'i':
+ // case 'I':
+ //   if (ply)
+ //     ply->invertNormals();
+ //   break;
   case 'v':
   case 'V':
     record = (record + 1) % 2; //---
-    break;
-	/*
-  case 'b':
-  case 'B':
-    box = (box + 1) % 2;
-    break;
-	*/
-  case 'w':
-  case 'W':
-    wire = (wire + 1) % 2;
-    break;
-  case 'h':
-  case 'H':
-    printf("\tpress q/Q for quit\n");
-    printf("\tpress i/I to invert normals\n");
-    printf("\tpress b/B to display bounding box\n");
-    printf("\tpress w/W to toggle wire frame rendering\n");
-    printf("\tpress e/E to revert viewpoint to initial positions\n");
-	printf("\tpress z/Z to scale PLY object\n"); // scale
-	printf("\tpress x/X to scale PLY object\n");
-	printf("\tpress c/C to scale PLY object\n");
-	printf("\tpress a/A to rotate PLY object\n"); // rotate
-	printf("\tpress s/S to rotate PLY object\n");
-	printf("\tpress d/D to rotate PLY object\n");
-    break;
-  // scale ------------------------------------
-  case 'z':
-  case 'Z':
-    slice_mode ^= 1;
-    break;
-  case 'x':
-  case 'X':
-    // fill_me...
-	guass_diffusion();
-	break;
-  case 'c':
-    // fill_me...
-	break;
-  case 'C':
-    // fill_me...
-    break;
+	id_file = 1;
+ //   break;
+	///*
+ // case 'b':
+ // case 'B':
+ //   box = (box + 1) % 2;
+ //   break;
+	//*/
+ // case 'w':
+ // case 'W':
+ //   wire = (wire + 1) % 2;
+ //   break;
+ // case 'h':
+ // case 'H':
+ //   printf("\tpress q/Q for quit\n");
+ //   printf("\tpress i/I to invert normals\n");
+ //   printf("\tpress b/B to display bounding box\n");
+ //   printf("\tpress w/W to toggle wire frame rendering\n");
+ //   printf("\tpress e/E to revert viewpoint to initial positions\n");
+	//printf("\tpress z/Z to scale PLY object\n"); // scale
+	//printf("\tpress x/X to scale PLY object\n");
+	//printf("\tpress c/C to scale PLY object\n");
+	//printf("\tpress a/A to rotate PLY object\n"); // rotate
+	//printf("\tpress s/S to rotate PLY object\n");
+	//printf("\tpress d/D to rotate PLY object\n");
+ //   break;
+ // // scale ------------------------------------
+ // case 'z':
+ // case 'Z':
+ //   slice_mode ^= 1;
+ //   break;
+ // case 'x':
+ // case 'X':
+ //   // fill_me...
+	//guass_diffusion();
+	//break;
+ // case 'c':
+ //   // fill_me...
+	//break;
+ // case 'C':
+ //   // fill_me...
+ //   break;
   // rotate ------------------------------------
   case 'a':
   case 'A':
@@ -165,32 +171,36 @@ void readKeyboard(unsigned char key, int x, int y)
 	 //savePrefernceColorTranslationFunc();
 	 saveOpacityTF();
     break;
-  case 'd':
-    // fill_me...
-	break;
-  case 'D':
-    // fill_me...
-    break;
-  // -------------------------------------------
-  case 'e':
-  case 'E':
-    // reset initial view parameters
-    angle = 20;
-    angle2 = 30;
-    current_pos[0] = 0.0;
-    current_pos[1] = 0.0;
-    current_pos[2] = 5.0;
-	// reset rendering parameters
-	flat = wire = 1;
-	record = box = light = texture = 0;
-	ambient = diffuse = specular = 1;
-    break;
+ // case 'd':
+ //   // fill_me...
+	//break;
+ // case 'D':
+ //   // fill_me...
+ //   break;
+ // // -------------------------------------------
+ // case 'e':
+ // case 'E':
+ //   // reset initial view parameters
+ //   angle = 20;
+ //   angle2 = 30;
+ //   current_pos[0] = 0.0;
+ //   current_pos[1] = 0.0;
+ //   current_pos[2] = 5.0;
+	//// reset rendering parameters
+	//flat = wire = 1;
+	//record = box = light = texture = 0;
+	//ambient = diffuse = specular = 1;
+ //   break;
+ // case 'l':case'L':
+	//light ^= 1;
+	//break;
+ //case 'b':case'B':
+	// isPressedB ^= 1;
+	// break;
   case 'l':case'L':
-	light ^= 1;
-	break;
- case 'b':case'B':
-	 isPressedB ^= 1;
-	 break;
+	  b_log10 ^= 1;
+	  updateWindows();
+	  break;
   case 'p':case'P':
 	  wchar_t filename[100] = L"";
 	  char charname[100];

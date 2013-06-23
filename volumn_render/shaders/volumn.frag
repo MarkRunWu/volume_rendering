@@ -3,6 +3,7 @@ varying vec3 normal;
 uniform vec3 lightDir;
 uniform sampler3D data;
 uniform sampler1D transerfunction;
+uniform sampler2D TF2D_data;
 uniform vec3 viewVec;
 uniform vec3 NofViewPlan;
 uniform vec3 scale;
@@ -69,7 +70,7 @@ void main(){
 	if( tnear < 0.0 ) tnear = 0.0;
 	float sampleLen = sampleSpacing ;
 	vec4 sampleColor = vec4(0.0);
-	vec4 diffuse = vec4( 1.0 , 0.0 ,0.0 , 0.0);
+	vec4 diffuse = vec4( 1.0 , 1.0 , 1.0 , 0.0);
 	vec4 specular = vec4( 1.0 , 1.0 , 1.0  , 0.0 );
 	vec3 normalv;
 	lightDir = vec3(0,-1,0);
@@ -91,8 +92,8 @@ void main(){
 			accumulatedColor.rgb = (1.0 - accumulatedColor.a)*sampleColor.rgb + accumulatedColor.rgb;
 			accumulatedColor.a = (1.0 - accumulatedColor.a)*sampleColor.a + accumulatedColor.a;
 		}
-		if( samplePos.x > 1.0 || samplePos.y > 1.0 || samplePos.x < -1.0 || samplePos.y < -1.0
-			|| samplePos.z > 1.0 || samplePos.z < -1.0 || accumulatedColor.a > 1.0){
+		if( samplePos.x > scale.x || samplePos.y > scale.y || samplePos.x < -scale.x || samplePos.y < -scale.y
+			|| samplePos.z > scale.z || samplePos.z < -scale.z || accumulatedColor.a > 1.0){
 				break;
 			
 		}

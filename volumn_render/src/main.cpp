@@ -1,9 +1,11 @@
 /*
 ** Student ID number: // fill_me
 */
+#include "GL\glew.h"
 
 #include <iostream>
 using namespace std;
+#include <GL/glut.h>
 #include "Resource.h"
 #include "textfile.h"
 #define DEGREE2RADIAN( x )( ((x) / 180.0) * 3.14159265)
@@ -17,8 +19,17 @@ extern int panel_width;
 extern int isPressedB;
 unsigned char image[512][512][3];
 
+// bat 模式
+bool b_batMode = false;
+int id_file;
+/* 輸入dat路徑 & 輸出image路徑*/
+char* src_path;
+char* dat_name;
+char* output_path;
+char* image_name;
+/**/
 void guass_diffusion();
-
+void initData2( const char* volumn_file);
 int window , window2;
 GLint transferfunctionLoc , dataloc , viewloc , normal_of_viewplane , lightpos_loc , scale_loc;
 int updateFlag;
@@ -28,7 +39,7 @@ GLuint texture_index;
 perspectiveData pD;
 
 GLuint v0, f0, p0; // shader
-
+bool b_log10 = false;
 int histogram[256] = {0};
 int path[256] = {0};
 
@@ -60,6 +71,7 @@ void updateTexture(int window){
 
 	glDisable( GL_TEXTURE_1D );
 }
+
 
 void updateRGBA(){
 	updateTexture(window);
@@ -143,7 +155,6 @@ void gl_ortho_begin(unsigned size_x, unsigned size_y)
 	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
 }
-
 
 /*
 **
@@ -261,7 +272,9 @@ void screenshot(int x, int y, int w, int h)
 	static int count = 0;
 	char filename[50];
 
-	sprintf(filename,"%05d.png", count);
+	if( b_batMode )
+		sprintf(filename,"%s//%s%02d.png", output_path , image_name  , id_file );
+	else sprintf(filename,"%05d.png", count );
 
 	if(FreeImage_Save(FIF_PNG, image, filename))
 		fprintf(stderr, "Wrote %s!\n", filename);
@@ -280,14 +293,14 @@ void drawVolumnBox(){
 	glPushMatrix();
 	//glTranslatef( 0.5 , 0.5, 0.5 );
 	//glScalef( 0.5 ,0.5, 0.5);
-	glColor3f( 1.f , 0.f , 0.f );
+	glColor3f( 0.f , 0.f , 0.f );
 	glBegin(GL_LINE_LOOP);
 	glVertex3f( 1 , 1 , -1 );
 	glVertex3f( 1 ,-1 , -1 );
 	glVertex3f( -1 ,-1  , -1 );
 	glVertex3f( -1 , 1 , -1 );
 	glEnd();
-	glColor3f( 0.f , 1.f , 0.f );
+	//glColor3f( 0.f , 1.f , 0.f );
 	glBegin(GL_LINE_LOOP);
 	glVertex3f( 1 , 1 , 1 );
 	glVertex3f( 1 ,-1 , 1 );
@@ -295,7 +308,7 @@ void drawVolumnBox(){
 	glVertex3f( -1 , 1 , 1 );
 	glEnd();
 
-	glColor3f( 0.f , 0.f , 1.f );
+	//glColor3f( 0.f , 0.f , 1.f );
 	glBegin(GL_LINE_LOOP);
 	glVertex3f( 1 , 1 , 1 );
 	glVertex3f( 1 ,1 , -1 );
@@ -320,23 +333,21 @@ void showVolumnDataByPlane( Vector3f normal , int pos  ){
 
 
 }
-// using shader to draw volumn data
-void drawDataUsingShader(){
-	glUseProgram( p0 );
-	glPushMatrix();
-	glScalef(2 , 2, 2);
-	glTranslatef( -0.5 , -0.5 , -0.5 );
-	glColor3f( 1 , 1 , 1);
-	glBegin( GL_QUADS );
-	glVertex3f( 0  , index/240.0 , 0);
-	glVertex3f( 1  , index/240.0 , 0);
-	glVertex3f( 1  , index/240.0 , 1);
-	glVertex3f( 0  , index/240.0 , 1);
-	glEnd();
-	glPopMatrix();
-	glUseProgram(0);
+
+bool next_file( int id ){
+	char file_name[128];
+	sprintf( file_name , "%s\\%s%02d.hdr" , src_path , dat_name , id );
+	cout << file_name << endl;
+	FILE* pin = fopen( file_name , "r" );
+	if( pin != NULL ){
+		fclose( pin );
+		initData2( file_name );
+		return true;
+	}
+	else return false;
 
 }
+
 /*
 **
 */
@@ -371,22 +382,15 @@ void display(void)
 	glPopMatrix();
 	*/
 	// string render
-	gl_ortho_begin(IMAGE_WIDTH, IMAGE_HEIGHT);
-	string_render("Computer Graphics (Spring 2012), Name: Mark Run Wu, ID: 100598020", 20, IMAGE_HEIGHT-20); // fill_me...
-	string_render("v: start/end screenshot", 20, IMAGE_HEIGHT-40);
-	string_render("p: Open volume data", 20, IMAGE_HEIGHT-60);
-	gl_ortho_end();
-
-
-	// kamon
-	glBegin(GL_POINTS);
-	for (int i=0; i<512; i++){
-		for (int j=0; j<512; j++){
-			glColor3ubv(image[i][j]);
-			glVertex3f(2.5f + j/200.0f, -0.99, 2.5f + i/200.0f);
-		}
+	if (!record){
+		gl_ortho_begin(IMAGE_WIDTH, IMAGE_HEIGHT);
+		//string_render("Computer Graphics (Spring 2012), Name: Mark Run Wu, ID: 100598020", 20, IMAGE_HEIGHT-20); // fill_me...
+		string_render("v: start/end screenshot", 20, IMAGE_HEIGHT-40);
+		string_render("p: Open volume data", 20, IMAGE_HEIGHT-60);
+		gl_ortho_end();
 	}
-	glEnd();
+
+
 
 	drawVolumnBox();
 
@@ -403,6 +407,7 @@ void display(void)
 	break;
 	}
 	*/
+	/*
 	glDisable(GL_TEXTURE_3D);
 	glActiveTexture( GL_TEXTURE0 );
 	glColor3ub( 255 , 255 ,255);
@@ -419,10 +424,10 @@ void display(void)
 	glVertex2f( 400.f , 0.f );
 	glEnd();
 	gl_ortho_end();
-
+	
 	// shader render
 	glDisable( GL_TEXTURE_1D );
-
+	*/
 	glGetFloatv( GL_MODELVIEW_MATRIX , mv );
 	for( int i = 0 ; i != 3 ; i++){
 		// orientation
@@ -514,20 +519,13 @@ void display(void)
 	glVertex3f( 1 , -1.f , 1.f );
 	glEnd();
 	glPopMatrix();
-		/*
-	glBegin( GL_QUADS );
-	glVertex3f( 0.f , index/240.0 , 0.f );
-	glVertex3f( 0.f ,index/240.0, 1.f );
-	glVertex3f( 1.f , index/240.0 , 1.f );
-	glVertex3f( 1.f ,index/240.0 , 0.f );
-	glEnd();
-	*/
-
-	// screenshot
 
 	// screenshot
 	if (record){
 		screenshot(0,0,IMAGE_WIDTH,IMAGE_HEIGHT);
+		if( b_batMode && !next_file( ++id_file ) ){
+			record = false;
+		}
 	}
 
 	glutSwapBuffers();
@@ -598,17 +596,18 @@ void initDisplay()
 	myList.push_back(start);
 	myList.push_back(end);
 
-	//-------------------------------------------------------
-	// Kamon (image.raw) must be 256x256 (color image) pixels
-	FILE *p;
-	p = fopen("qr.raw", "rb");  // fill_me, change it to your student ID number
-	fread(image, sizeof(unsigned char), 512*512*3, p);
-	fclose(p);
-	//-------------------------------------------------------
 
+	//-------------------------------------------------------
+	//generate a texture id
+	glGenTextures(1 , &texName3D);
 }
 
-
+void updateWindows(){
+	glutSetWindow( window );
+	glutPostRedisplay();
+	glutSetWindow( window2 );
+	glutPostRedisplay();
+}
 /*
 **
 */
@@ -617,10 +616,7 @@ void idle_callback(void){
 	if( index > data_depth){
 		index = 0;
 	}
-	glutSetWindow( window );
-	glutPostRedisplay();
-	glutSetWindow( window2 );
-	glutPostRedisplay();
+	updateWindows();
 }
 void initData2( const char* volumn_file){
 	char filename[100];
@@ -629,14 +625,14 @@ void initData2( const char* volumn_file){
 	printf("open %s\n" , filename);
 	char* extension = strstr( filename , ".hdr");
 	FILE* fheader = fopen(filename , "r");
-	unsigned char* data;
-	fscanf( fheader ,  "%d%d%d" , &data_width , &data_height , &data_depth );
-	fclose( fheader );
-
-	//allocate w * h * d memory
-	data = (unsigned char*) malloc(sizeof(unsigned char)*data_depth * data_width * data_height );
-	//teapot.Data = new unsigned char[width*height*depth];
 	
+	char format_str[512];
+	fscanf( fheader ,  "%d%d%d%s" , &data_width , &data_height , &data_depth , format_str );
+	fclose( fheader );
+	
+	void* data;
+
+
 	strncpy( extension , ".dat", 4 );
 	
 	//read data from disk
@@ -645,24 +641,58 @@ void initData2( const char* volumn_file){
 		fprintf(stderr, "Cannot open input file %s.\n", volumn_file);
 		exit(1);
 	}
-	fread( data , sizeof(unsigned char) , data_depth*data_width*data_height , fin );
-	fclose(fin);
-
 	//reset histogram
 	for( int k = 0 ; k != 256 ; k++){
 		histogram[ k ] = 0;
 	}
-	//histogram
-	
-	for( int k = 0 ; k < data_depth ; k++){
-		for( int i = 0 ; i < data_width ; i++){
-			for( int j = 0 ; j < data_height ; j++){
 
-				histogram[ (int)data[k*data_width*data_height + i*data_height + j] ]++;
+	GLuint format = GL_UNSIGNED_BYTE;
+	if( strcmp( format_str, "FLOAT" ) == 0 ){
+		format = GL_FLOAT;
+		//allocate w * h * d memory
+		float* fdata = (float*) malloc(sizeof(float)*data_depth * data_width * data_height );
+		fread( fdata , sizeof(float) , data_depth*data_width*data_height , fin );
+		
+		float fmin = 1e30,fmax = -1e30;
+		for( int k = 0 ; k < data_depth ; k++){
+			for( int j = 0 ; j < data_height ; j++){
+				for( int i = 0 ; i < data_width ; i++){
+					fmin = min( fmin , fdata[k*data_height*data_width + j*data_width + i] );
+					fmax = max( fmax , fdata[k*data_height*data_width + j*data_width + i] );
+				}
 			}
 		}
+		float range = fmax - fmin;
+		//histogram
+		for( int k = 0 ; k < data_depth ; k++){
+			for( int i = 0 ; i < data_width ; i++){
+				for( int j = 0 ; j < data_height ; j++){
+					histogram[ (int) (( fdata[k*data_width*data_height + i*data_height + j] - fmin )/range ) ]++;
+				}
+			}
+		}
+		data = fdata;
+	}else if( strcmp( format_str , "UBYTE") == 0 ){
+		//allocate w * h * d memory
+		unsigned char* udata = (unsigned char*) malloc(sizeof(unsigned char)*data_depth * data_width * data_height );
+		fread( udata , sizeof(unsigned char) , data_depth*data_width*data_height , fin );
+
+		for( int k = 0 ; k < data_depth ; k++){
+			for( int i = 0 ; i < data_width ; i++){
+				for( int j = 0 ; j < data_height ; j++){
+					histogram[ (int)udata[k*data_width*data_height + i*data_height + j] ]++;
+				}
+			}
+		}
+
+		data = udata;
+	}else{
+		cout << "Error: unkown format... " << endl;
+		system("pause");
+		exit(1);
 	}
-	
+
+	fclose(fin);
 	
 	glActiveTexture( GL_TEXTURE1 );
 	fprintf(stderr, "texture id: %u.\n" , texName3D);
@@ -675,19 +705,8 @@ void initData2( const char* volumn_file){
 	glTexParameterf( GL_TEXTURE_3D , GL_TEXTURE_MIN_FILTER , GL_LINEAR);
 
 	//generate a 3D texture
-	glTexImage3D(GL_TEXTURE_3D , 0 , GL_LUMINANCE , data_width , data_height , data_depth , 0 , GL_LUMINANCE , GL_UNSIGNED_BYTE , data );
+	glTexImage3D(GL_TEXTURE_3D , 0 , GL_LUMINANCE , data_width , data_height , data_depth , 0 , GL_LUMINANCE , format , data );
 
-	//write into mData;
-
-	for( int k = 0 ; k < data_depth ; k++){
-		for( int i = 0 ; i < data_width ; i++){
-			for( int j = 0 ; j < data_height ; j++){
-				mdata[k][i][j] = data[k*data_width*data_height + i*data_height + j] ;
-			}
-		}
-	}
-	//guass_diffusion();
-	
 	glDisable(GL_TEXTURE_3D);
 
 	
@@ -848,12 +867,21 @@ void guass_diffusion(){
 */
 int main(int argc, char **argv)
 {
-
+	b_batMode = false;
+	if( argc < 5 ){
+		cout << "volumn_render src_dat_path dat_name outputpath imagename" << endl;
+	}else{
+		b_batMode = true;
+		src_path = argv[1];
+		dat_name = argv[2];
+		output_path = argv[3];
+		image_name = argv[4];
+	}
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(IMAGE_WIDTH,IMAGE_HEIGHT);
 	glutInitWindowPosition(100,100);
-	window = glutCreateWindow("Lab4, Name:吳濬志, ID:100598020");  // fill_me
+	window = glutCreateWindow("Volume Data Viewer for UBYTE/FLOAT");  // fill_me
 
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
@@ -889,10 +917,13 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
 		exit(1);
 	}
-	//generate a texture id
-	glGenTextures(1 , &texName3D);
-	initData2("CT_head.hdr");
+	//initData2("CT_head.hdr");
 	initDisplay();
+	
+	if( b_batMode ){
+		id_file = 1;
+		next_file(id_file);
+	}
 	setShaders();
 	///////////////////////////////////
 	//glutSetWindow( window2 );
