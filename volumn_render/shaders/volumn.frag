@@ -33,12 +33,12 @@ vec3 getNormal( vec3 texPosition ){
 	vec3 right = vec3( 0.005 , 0 , 0);
 	vec3 front = vec3( 0 , 0 , -0.005);
 	vec3 end = vec3( 0 , 0 , 0.005 );
-    vec4 scalar = vec4( texture3D( data , pos + right ).s - texture3D( data , pos + left ).s ,
-	 texture3D( data , pos + up ).s - texture3D( data , pos + down ).s ,
-	  texture3D( data , pos + end ).s - texture3D( data , pos + front ).s , 0.0 ) ;
+    vec3 scalar = vec3( texture3D( data , pos + left ).s - texture3D( data , pos + right ).s ,
+	 texture3D( data , pos + down ).s - texture3D( data , pos + up ).s ,
+	  texture3D( data , pos + front ).s - texture3D( data , pos + end ).s );
 	  if( length( scalar ) > 0 )
-		scalar.xyz = normalize( scalar.xyz );
-	return scalar.xyz;
+		scalar = normalize( scalar);
+	return scalar;
 }
 vec4 getColor( vec3 texPosition ){
 	vec3 pos = (0.5*texPosition+0.5*scale)/scale; //0.5*texPosition + 0.5*vec3(1);
@@ -82,10 +82,10 @@ void main(){
 		// caculate normal
 		normalv = getNormal( samplePos );
 		float f = dot( h , normalv );
-		//float sp = dot( h , normalv );
+		float sp = dot( h , normalv );
 		sampleColor = getColor(samplePos);
 		if( f > 0.0 ) sampleColor.rgb *= f*diffuse.rgb;
-		//if( sp > 0.0 ) sampleColor += pow( sp , 10.0 )*specular;
+		if( sp > 0.0 ) sampleColor += pow( sp , 250.0 )*specular;
 		
 		if( sampleColor.a > 0.001 ){
 			accumulatedColor.rgb = (1.0 - accumulatedColor.a)*sampleColor.rgb + accumulatedColor.rgb;
